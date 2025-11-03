@@ -1,0 +1,13 @@
+# Python
+__pycache__/
+*.pyc
+*.db
+
+# Virtual environment
+venv/
+
+# Downloaded files and temporary assets
+chromedriver.zip
+google-chrome-stable_current_amd64.deb
+debug_screenshot_lighter.png
+chromedriver-linux64/
