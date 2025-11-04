@@ -33,7 +33,7 @@ def main():
     print(f"--- Running scrape job at {datetime.now()} ---")
     
     
-    """
+    
 # Scrape Hyperliquid
     hyperliquid_data = scrape_hyperliquid()
     if hyperliquid_data:
@@ -54,7 +54,7 @@ def main():
     lighter_data = scrape_lighter()
     if lighter_data:
         store_price_data(dex_name='lighter',  token_pair='HYPE/USDC', price=lighter_data['price'])
-"""
+
     # Scrape geckoterminal ---
     geckoterminal_data = scrape_geckoterminal()
     if geckoterminal_data:

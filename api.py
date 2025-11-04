@@ -24,6 +24,10 @@ def get_all_data():
     
     return jsonify(data)
 
+@app.route('/', methods=['GET'])
+def index():
+    return "Welcome to the HYPE Price API! Try accessing the /data endpoint."
+
 if __name__ == "__main__":
     # This is for local testing only. For production, we use Gunicorn.
     app.run(debug=True, port=5000)
