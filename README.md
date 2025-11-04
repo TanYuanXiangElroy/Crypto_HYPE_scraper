@@ -155,3 +155,62 @@ This project is designed to be easily extensible. Follow these steps to add a sc
     -   Open `main.py`.
     -   Add `scrape_new_dex` to the import list at the top.
     -   Add a new block inside the `main()` function to call your scraper and store its data.
+
+    ## Automation with Cron (Linux/WSL)
+
+    To run the scraper automatically at a regular interval, you can set up a cron job. The following steps will configure the scraper to run every 5 minutes and save its output to a log file for easy debugging.
+
+    The included `main.py` script has a lock file mechanism to prevent multiple instances from running at the same time, which makes it safe for automated execution with cron.
+
+    ### Steps to Set Up the Cron Job
+
+    1.  **Open the Crontab Editor:**
+        Open your terminal and type the following command to edit the cron configuration file for your user.
+        ```bash
+        crontab -e
+        ```
+        *(If it's your first time, you may be asked to choose a text editor. Select `nano` if you are unsure, as it is the easiest to use.)*
+
+    2.  **Add the Job Definition:**
+        Go to the bottom of the file and add the following line.
+
+        **Important:** You must replace `/path/to/your/project` with the **absolute path** to your project directory. You can find this path by navigating to your project folder in the terminal and running the `pwd` command.
+
+        ```crontab
+        # Run the HYPE price scraper every 5 minutes and log output
+        */5 * * * * /path/to/your/project/venv/bin/python /path/to/your/project/main.py >> /path/to/your/project/cron.log 2>&1
+        ```
+
+        **Example:** If your project is located at `/home/elroy/Crypto_HYPE_scraper`, the line would be:
+        ```crontab
+        */5 * * * * /home/elroy/Crypto_HYPE_scraper/venv/bin/python /home/elroy/Crypto_HYPE_scraper/main.py >> /home/elroy/Crypto_HYPE_scraper/cron.log 2>&1
+        ```
+
+    3.  **Save and Exit:**
+        -   If using `nano`, press `Ctrl+X`, then `Y`, and finally `Enter` to save the file.
+        -   You should see a confirmation message like `crontab: installing new crontab`.
+
+    ### Understanding the Cron Job Command
+
+    Each part of the command has a specific purpose:
+
+    -   `*/5 * * * *`: **The Schedule.** This is the "cron expression" that means "run at every 5th minute of every hour, of every day."
+    -   `/path/to/your/project/venv/bin/python`: **The Python Interpreter.** This is the absolute path to the Python executable *inside your virtual environment*. This is crucial to ensure the script runs with all the correct installed packages.
+    -   `/path/to/your/project/main.py`: **The Script to Run.** This is the absolute path to your main scraper script.
+    -   `>> /path/to/your/project/cron.log`: **Redirecting Output.** The `>>` operator appends any printed output from your script to a file named `cron.log`. This allows you to see what the scraper is doing.
+    -   `2>&1`: **Redirecting Errors.** This is a standard shell command that means "redirect the standard error stream (`2`) to the same place as the standard output stream (`1`)". In short, it ensures that both normal output and any error messages are saved to your `cron.log` file, making debugging much easier.
+
+    ### Managing the Cron Job
+
+    -   **To view your active cron jobs:**
+        ```bash
+        crontab -l
+        ```
+    -   **To remove all of your cron jobs:**
+        ```bash
+        crontab -r
+        ```
+    -   **To monitor the scraper's output in real-time:**
+        ```bash
+        tail -f /path/to/your/project/cron.log
+        ```
