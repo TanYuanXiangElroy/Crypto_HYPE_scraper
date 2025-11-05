@@ -1,9 +1,11 @@
-from selenium import webdriver
+import logging
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException
-
+from scraper.driver import get_webdriver
+from config import SCRAPER_CONFIG
+from scraper.exceptions import ScrapingError
 
 def scrape():
     """
@@ -12,41 +14,28 @@ def scrape():
     Selenium usage for consistency with other scrapers.
     
     """
-    print("Scraping prjx...")
-    url = "https://www.prjx.com/swap?fromToken=0xb88339CB7199b77E23DB6E890353E22632Ba630f&fromChain=999&toToken=0x0000000000000000000000000000000000000000&toChain=999"
-    
-    # IMPORTANT: Configure Selenium for a server environment
-    options = webdriver.ChromeOptions()
-    options.add_argument('--headless') # Runs Chrome without a GUI
-    options.add_argument('--no-sandbox')
-    options.add_argument('--disable-dev-shm-usage')
-    options.add_argument('user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36')
-    
-    driver = webdriver.Chrome(options=options)
+    logging.info("Scraping prjx...")
+    config = SCRAPER_CONFIG['prjx']
+    driver = get_webdriver()
     try:
-        print(f"   Getting URL: {url}")
-        driver.get(url)
+        logging.info(f"   Getting URL: {config['url']}")
+        driver.get(config['url'])
 
-        price_xpath_selector = "//p[contains(text(), 'HYPE')]/following-sibling::p"
-
-        # Wait up to 20 seconds for the element with the price to appear
         wait = WebDriverWait(driver, 20)
-        price_element = wait.until(EC.presence_of_element_located((By.XPATH , price_xpath_selector)))
+        price_element = wait.until(EC.presence_of_element_located((By.XPATH , config['selector'])))
         
-        # This part depends heavily on the site. You might need to get a 'value' or 'innerText'.
         price_text = price_element.get_attribute('value') or price_element.text
 
-        # Clean the extracted text to get a number
         price = float(price_text.replace('$', '').strip())
         return {'price': price}
         
     except TimeoutException:
-        print("Error scraping prjx: Timed out waiting for price element.")
+        logging.error("Error scraping prjx: Timed out waiting for price element.")
         driver.save_screenshot('debug_screenshot_prjx.png')
-        print("   Screenshot saved as debug_screenshot_prjx.png for inspection.")
-        return None
+        logging.info("   Screenshot saved as debug_screenshot_prjx.png for inspection.")
+        raise ScrapingError("Timed out waiting for price element on prjx")
     except Exception as e:
-        print(f"Error scraping prjx: {e}")
-        return None
+        logging.error(f"Error scraping prjx: {e}")
+        raise ScrapingError(f"An unexpected error occurred on prjx: {e}")
     finally:
         driver.quit()

@@ -1,5 +1,5 @@
 # api.py (The Server)
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 import sqlite3
 
 app = Flask(__name__)
@@ -13,14 +13,35 @@ def get_db_connection():
 @app.route('/data', methods=['GET'])
 def get_all_data():
     """API endpoint to fetch all stored price data."""
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute('SELECT timestamp, dex_name, token_pair, price FROM hype_prices ORDER BY timestamp DESC')
-    rows = cursor.fetchall()
-    conn.close()
 
-    # Convert the database rows to a list of dictionaries
-    data = [dict(row) for row in rows]
+    limit = request.args.get('limit', type=int)
+    dex_name = request.args.get('dex_name', type=str)
+    # Start with a base query
+    query = 'SELECT timestamp, dex_name, token_pair, price FROM hype_prices'
+    params = []
+
+    if dex_name:
+        query += ' WHERE dex_name = ?'
+        params.append(dex_name)
+
+    query += ' ORDER BY timestamp DESC'
+
+    if limit:
+        query += ' LIMIT ?'
+        params.append(limit)
+
+
+    try:
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(query, params)
+            rows = cursor.fetchall()
+            # Convert the database rows to a list of dictionaries
+            data = [dict(row) for row in rows]
+    except sqlite3.Error as e:
+        # Log the error and return an appropriate error response
+        app.logger.error(f"Database error: {e}")
+        return jsonify({"error": "A database error occurred"}), 500
     
     return jsonify(data)
 
