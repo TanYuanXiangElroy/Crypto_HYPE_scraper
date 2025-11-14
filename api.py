@@ -17,7 +17,7 @@ def get_all_data():
     limit = request.args.get('limit', type=int)
     dex_name = request.args.get('dex_name', type=str)
     # Start with a base query
-    query = 'SELECT timestamp, dex_name, token_pair, price FROM hype_prices'
+    query = 'SELECT timestamp, dex_name, token_pair, spot_price,fee_percentage,buy_price,sell_price FROM hype_prices'
     params = []
 
     if dex_name:

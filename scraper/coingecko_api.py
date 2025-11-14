@@ -43,23 +43,44 @@ def scrape_gecko_terminal_pool(network: str, pool_address: str, target_token_add
         quote_token_price_usd = attributes.get('quote_token_price_usd')
         
         # 4. Determine which price to return by comparing addresses (case-insensitive)
-        price = None
+        spot_price = None
         
         if target_token_address.lower() == base_token_address.lower():
-            price = float(base_token_price_usd)
+            spot_price = float(base_token_price_usd)
         elif target_token_address.lower() == quote_token_address.lower():
-            price = float(quote_token_price_usd)
+            spot_price = float(quote_token_price_usd)
         else:
             print(f"   Error: Target token address '{target_token_address}' not found in pool.")
             return None
 
         pool_name = attributes.get('name', 'Unknown Pair')
-        print(f"   Successfully scraped Price for {pool_name}: {price:.6f}")
+
+        fee_percentage_str = attributes.get('pool_fee_percentage')
+        fee_percentage = 0.0
+        
+        # Safely convert fee to a float, defaulting to 0 if it's missing or invalid
+        if fee_percentage_str:
+            try:
+                fee_percentage = float(fee_percentage_str)
+            except (ValueError, TypeError):
+                print(f"   Warning: Could not parse fee_percentage: '{fee_percentage_str}'")
+        
+        fee_multiplier = fee_percentage / 100
+        
+        # Calculate effective prices
+        # For a buyer, the effective price is higher. For a seller, it's lower.
+        effective_buy_price = spot_price / (1 - fee_multiplier) if fee_multiplier < 1 else spot_price
+        effective_sell_price = spot_price * (1 - fee_multiplier)
+
+        print(f"   Successfully scraped Price for {pool_name}: Spot=${spot_price:.6f}, Fee={fee_percentage}%")
 
         return {
-            'main_price': price,
-            'pool_name': pool_name
-            }
+            'spot_price': spot_price,
+            'pool_name': pool_name,
+            'fee_percentage': fee_percentage,
+            'buy_price': effective_buy_price,
+            'sell_price': effective_sell_price
+        }
 
     except requests.exceptions.HTTPError as http_err:
         print(f"   HTTP error occurred: {http_err} - Check the network ID or Pool Address.")

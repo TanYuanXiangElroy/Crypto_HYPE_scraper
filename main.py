@@ -1,6 +1,6 @@
 #run once and then exit
 
-# scraper.py (The Worker)
+# main.py (The Worker)
 import os
 import sqlite3
 import logging
@@ -15,7 +15,7 @@ DB_PATH = os.path.join(SCRIPT_DIR, 'prices.db') # Joins the directory path and t
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-def store_price_data(dex_name, token_pair, price):
+def store_price_data(dex_name, token_pair, data):
     """Inserts a new price record into the SQLite database using an absolute path."""
     # Connect to the database using the absolute DB_PATH
     conn = sqlite3.connect(DB_PATH) 
@@ -23,14 +23,23 @@ def store_price_data(dex_name, token_pair, price):
     
     timestamp = datetime.now()
     
+    
     try:
         cursor.execute('''
-        INSERT INTO hype_prices (timestamp, dex_name, token_pair, price)
-        VALUES (?, ?, ?, ?)
-        ''', (timestamp, dex_name, token_pair, price))
+        INSERT INTO hype_prices (timestamp, dex_name, token_pair, spot_price, fee_percentage, buy_price, sell_price)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+        ''', (
+            timestamp, 
+            dex_name, 
+            token_pair, 
+            data.get('spot_price'),
+            data.get('fee_percentage'),
+            data.get('buy_price'),
+            data.get('sell_price')
+        ))
         
         conn.commit()
-        logging.info(f"-> Successfully stored: {dex_name} | {token_pair} | ${price}")
+        logging.info(f"-> Successfully stored: {dex_name} | {token_pair} | Spot Price=${data.get('spot_price'):.4f}")
     except Exception as e:
         logging.error(f"-> Error storing data: {e}")
     finally:
@@ -109,14 +118,13 @@ def main():
                 target_token_address=pool['target_token_address'] 
         )
             
-            if scraped_data and 'main_price' in scraped_data:
-
-                token_pair_name = scraped_data.get('pool_name', 'Unknown Pair')
-
+            if price_data:
+                token_pair_name = price_data.get('pool_name', 'Unknown Pair')
+                
                 store_price_data(
                     dex_name=pool['dex_name'],
-                    token_pair=token_pair_name, 
-                    price=scraped_data['main_price']
+                    token_pair=token_pair_name,
+                    data=price_data
                 )
             else:
                 print(f"-> Skipping database insert for {pool['dex_name']} due to scraping failure.")
