@@ -6,7 +6,7 @@ import sqlite3
 import logging
 from datetime import datetime
 
-from scraper import scrape_gecko_terminal_pool
+from scraper import scrape_gecko_terminal_pool, scrape_hyperliquid_native
 from scraper.exceptions import ScrapingError
 
 # This gets the directory where the main.py script itself is located
@@ -83,7 +83,13 @@ def main():
                 network=pool['network'],
                 pool_address=pool['pool_address'],
                 target_token_address=pool['target_token_address'] 
-        )
+            )
+            
+            elif pool['scraper_function'] == 'hyperliquid_native':
+                # The native scraper only needs the symbol (e.g., "HYPE")
+                # We can re-use the 'target_token_address' column to store the symbol "HYPE"
+                # or just hardcode it since it's a specific scraper.
+                price_data = scrape_hyperliquid_native(target_token_symbol="HYPE")
             
             if price_data:
                 token_pair_name = price_data.get('pool_name', 'Unknown Pair')

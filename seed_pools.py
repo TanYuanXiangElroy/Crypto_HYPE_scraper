@@ -6,11 +6,20 @@ import sqlite3
 HYPE: 0x0d01dc56dcaaca66ad901c959b4011ec
 WHYPE: 0x5555555555555555555555555555555555555555
 USDC: 0xb88339cb7199b77e23db6e890353e22632ba630f
+
+
+{ #outdated example as the pool is too small so give wrong data
+    "dex_name": "ramses-v3-hyperevm", 
+    "scraper_function": "geckoterminal",
+    "network": "hyperevm", 
+    "pool_address": "0xebe8bbbf8e9582ef7c8f7705f4458e6ee34850ae",
+    "target_token_address": "0x5555555555555555555555555555555555555555",
+}
 """
 pools_to_scrape = [
     {
     "dex_name": "Hyperliquid DEX", 
-    "scraper_function": "geckoterminal",
+    "scraper_function": "hyperliquid_native",
     "network": "hyperliquid", 
     "pool_address": "0x13ba5fea7078ab3798fbce53b4d0721c",
     "target_token_address": "0x0d01dc56dcaaca66ad901c959b4011ec",
@@ -50,13 +59,7 @@ pools_to_scrape = [
     "pool_address": "0x3e69297ae794011970256623b4ab68324983b9ed",
     "target_token_address": "0x5555555555555555555555555555555555555555",
 },
-{
-    "dex_name": "ramses-v3-hyperevm", 
-    "scraper_function": "geckoterminal",
-    "network": "hyperevm", 
-    "pool_address": "0xebe8bbbf8e9582ef7c8f7705f4458e6ee34850ae",
-    "target_token_address": "0x5555555555555555555555555555555555555555",
-}
+
 ]
 
 def seed_pools():

@@ -14,5 +14,8 @@ from .geckoterminal import scrape as scrape_geckoterminal
 
 from .upheaval_v3_rpc import scrape as scrape_upheaval_v3_rpc
 
+from .hyperliquid_native import scrape as scrape_hyperliquid_native
+
+
 # Import the geckoterminal_api scraper
-from .coingecko_api import scrape_gecko_terminal_pool
+from .geckoterminal_api import scrape_gecko_terminal_pool
