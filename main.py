@@ -45,67 +45,34 @@ def store_price_data(dex_name, token_pair, data):
     finally:
         conn.close()
 
+def getting_pools_to_scrape():
+    """Fetches the list of pools to scrape from the monitored_pools table."""
+    conn = sqlite3.connect(DB_PATH)
+    # This allows us to access columns by name (row['dex_name'])
+    conn.row_factory = sqlite3.Row 
+    cursor = conn.cursor()
+    
+    try:
+        cursor.execute("SELECT * FROM monitored_pools")
+        rows = cursor.fetchall()
+        # Convert database rows to a list of dictionaries just like your old hardcoded list
+        pools = [dict(row) for row in rows]
+        return pools
+    except Exception as e:
+        logging.error(f"Error fetching pools config: {e}")
+        return []
+    finally:
+        conn.close()
+
 def main():
     """Main function to run the scraping job."""
     logging.info(f"--- Running scrape job at {datetime.now()} ---")
 
-    # --- List of pools to scrape from GeckoTerminal ---
-    """
-    HYPE: 0x0d01dc56dcaaca66ad901c959b4011ec
-    WHYPE: 0x5555555555555555555555555555555555555555
-    USDC: 0xb88339cb7199b77e23db6e890353e22632ba630f
-    """
-    pools_to_scrape = [
-        {
-        "dex_name": "Hyperliquid DEX", 
-        "scraper_function": "geckoterminal",
-        "network": "hyperliquid", 
-        "pool_address": "0x13ba5fea7078ab3798fbce53b4d0721c",
-        "target_token_address": "0x0d01dc56dcaaca66ad901c959b4011ec",
-    },
-    {
-        "dex_name": "Upheaval", 
-        "scraper_function": "geckoterminal",
-        "network": "hyperevm", 
-        "pool_address": "0x2621bdceb7584241dd8ed3d7ee46938b34060e77",
-        "target_token_address": "0x5555555555555555555555555555555555555555",
-    },
-    {
-        "dex_name": "Project X", 
-        "scraper_function": "geckoterminal",
-        "network": "hyperevm", 
-        "pool_address": "0x6c9a33e3b592c0d65b3ba59355d5be0d38259285",
-        "target_token_address": "0x5555555555555555555555555555555555555555",
-    },
-    {
-        "dex_name": "HyperSwap V3", 
-        "scraper_function": "geckoterminal",
-        "network": "hyperevm", 
-        "pool_address": "0xe712d505572b3f84c1b4deb99e1beab9dd0e23c9",
-        "target_token_address": "0x5555555555555555555555555555555555555555",
-    },
-    {
-        "dex_name": "KittenSwap Algebra", 
-        "scraper_function": "geckoterminal",
-        "network": "hyperevm", 
-        "pool_address": "0x12df9913e9e08453440e3c4b1ae73819160b513e",
-        "target_token_address": "0x5555555555555555555555555555555555555555",
-    },
-    {
-        "dex_name": "ultrasolid-v3", 
-        "scraper_function": "geckoterminal",
-        "network": "hyperevm", 
-        "pool_address": "0x3e69297ae794011970256623b4ab68324983b9ed",
-        "target_token_address": "0x5555555555555555555555555555555555555555",
-    },
-    {
-        "dex_name": "ramses-v3-hyperevm", 
-        "scraper_function": "geckoterminal",
-        "network": "hyperevm", 
-        "pool_address": "0xebe8bbbf8e9582ef7c8f7705f4458e6ee34850ae",
-        "target_token_address": "0x5555555555555555555555555555555555555555",
-    }
-]
+    pools_to_scrape = getting_pools_to_scrape()
+    
+    if not pools_to_scrape:
+        logging.warning("No pools found in database to scrape.")
+        return
 
     # --- Loop through the pools and scrape data ---
     for pool in pools_to_scrape:

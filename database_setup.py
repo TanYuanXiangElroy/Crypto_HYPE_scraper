@@ -16,6 +16,18 @@ CREATE TABLE IF NOT EXISTS hype_prices (
     buy_price REAL,
     sell_price REAL
 )
+
+''')
+
+cursor.execute('''
+CREATE TABLE IF NOT EXISTS monitored_pools (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    dex_name TEXT NOT NULL,
+    scraper_function TEXT NOT NULL,
+    network TEXT NOT NULL,
+    pool_address TEXT NOT NULL,
+    target_token_address TEXT NOT NULL
+)
 ''')
 
 print("table created successfully.")

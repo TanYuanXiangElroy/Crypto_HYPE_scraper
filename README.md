@@ -175,3 +175,28 @@ Each part of the command has a specific purpose:
     ```bash
     tail -f /path/to/your/project/cron.log
     ```
+
+### The Architecture: How It Works
+
++-----------------+      (runs every 5 mins)
+|   Cron Job      +--------------------------+
+|  (main.py)      |                          |
++-------+---------+                          v
+        |                               +------------+
+        | (Writes data)                 | Database   |
+        |                               | (prices.db)|
+        +-----------------------------> +------+-----+
+                                               ^
+                                               | (Reads data)
+                                               |
++-----------------+      (runs continuously) +-+--------+
+|   API Server    +--------------------------+          |
+|    (api.py)     |                                     |
++-------+---------+                                     |
+        ^                                               |
+        | (Makes HTTP request to /data)                 |
+        |                                               |
++-------+-----------------------------------------------+
+| YOUR NEW DASHBOARD                                    |
+|   (dashboard.py)                                      |
++-------------------------------------------------------+
