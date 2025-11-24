@@ -1,5 +1,6 @@
+Flask
+APScheduler
+Flask-Cors
 requests
-flask
-schedule
 rich
-apscheduler
+web3

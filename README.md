@@ -93,6 +93,17 @@ You can now run the scraper and the API.
     -   **In a browser:** Navigate to `http://localhost:5000/data`
     -   **In a new terminal:** Use `curl http://127.0.0.1:5000/data`
 
+3.  **Run the Terminal Dashboard:**
+    This project includes a terminal-based dashboard that provides a live-updating view of the latest prices from the database.
+
+    **Prerequisite:** Ensure the API Server is running in a separate terminal.
+
+    To start the dashboard, run:
+    ```bash
+    python dashboard.py
+    ```
+    Your terminal will clear and display a table of the most recent data, which automatically refreshes every 15 seconds.
+
 ## How to Add a New Pool to Scrape
 
 This project is designed to be easily extensible. Follow these steps to add a new DEX pool to the scraping list.
@@ -119,7 +130,7 @@ This project is designed to be easily extensible. Follow these steps to add a ne
 
 That's it! The main loop will automatically pick up the new entry and start scraping it.
 
-## Automation with Cron (Linux/WSL)
+## Automation with Cron (Linux/WSL)  Cron is an alternative or backup, but api.py handles it by default.
 
 To run the scraper automatically at a regular interval, you can set up a cron job. The following steps will configure the scraper to run every 5 minutes and save its output to a log file for easy debugging.
 
@@ -176,8 +187,30 @@ Each part of the command has a specific purpose:
     tail -f /path/to/your/project/cron.log
     ```
 
-### The Architecture: How It Works
+## Dashboards & Architecture
 
+This project offers two ways to visualize the scraped data, both of which connect to the same backend API.
+
+### 1. Terminal Dashboard
+
+A lightweight, terminal-based dashboard powered by the `rich` library. It provides a live, auto-refreshing table of the latest price data.
+
+-   **How to Run:** `python dashboard.py`
+-   **Requires:** The API server (`api.py`) must be running.
+
+### 2. Web Dashboard (React Frontend)
+
+A more feature-rich, web-based dashboard built with React. This provides a user-friendly interface to view and interact with the data.
+
+-   **Location:** The code for this frontend is in the separate `scraper_front_end` directory.
+-   **Requires:** The API server (`api.py`) must be running.
+-   See the README in the `scraper_front_end` directory for full setup and run instructions.
+
+### System Architecture
+
+Here is how the different parts of the project fit together:
+
+```
 +-----------------+      (runs every 5 mins)
 |   Cron Job      +--------------------------+
 |  (main.py)      |                          |
@@ -193,10 +226,11 @@ Each part of the command has a specific purpose:
 |   API Server    +--------------------------+          |
 |    (api.py)     |                                     |
 +-------+---------+                                     |
-        ^                                               |
-        | (Makes HTTP request to /data)                 |
+        ^                                               ^
+        | (Makes HTTP request to /data)                 | (Makes HTTP request to /data)
         |                                               |
-+-------+-----------------------------------------------+
-| YOUR NEW DASHBOARD                                    |
-|   (dashboard.py)                                      |
-+-------------------------------------------------------+
++-------+------------------+      +---------------------+------------------+
+|  Terminal Dashboard      |      |  Web Dashboard (React)                 |
+|    (dashboard.py)        |      |  (in scraper_front_end/ folder)        |
++--------------------------+      +----------------------------------------+
+```
