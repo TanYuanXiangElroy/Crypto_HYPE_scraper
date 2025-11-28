@@ -18,6 +18,7 @@ chromedriver-linux64/
 # Log files and screenshots
 *.log
 *.png
+code_review.txt
 
 # IDE and OS specific files
 .idea/
