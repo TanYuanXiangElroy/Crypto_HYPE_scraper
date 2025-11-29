@@ -1,236 +1,139 @@
-# HYPE Token Price Scraper & API
+# Crypto HYPE Price Scraper & API
 
-This project is a Python-based application designed to scrape the price of the HYPE token from various decentralized exchanges (DEXs) using the GeckoTerminal API. The collected data is stored in a local SQLite database and can be served via a simple Flask API.
+This project is a Python-based application designed to scrape token prices from various decentralized exchanges (DEXs). It features a robust, modular architecture that allows for easy extension and management. The collected data is stored in a local SQLite database and served via a Flask API.
 
-This project serves as a practical environment to learn and experiment with API integration, project structure, and basic API development.
+This refactored version moves beyond simple scripts to a more structured application, separating concerns like database interaction, configuration, and scheduling into their own modules.
 
-## Project Evolution: From Selenium to API
+## Core Architecture
 
-This project originally started as a web scraper using the **Selenium** library to extract data directly from DEX websites.
+The project is designed with a clear separation of concerns, making it easier to maintain and extend.
 
-**Why the change?**
-- **Instability of Web Scraping:** Scraping websites is often brittle. A small change in a website's HTML structure could break the scraper, requiring constant maintenance.
-- **Efficiency:** Directly calling an API is significantly faster and more reliable than loading a full webpage in a browser.
-
-The new version of this project now uses the **GeckoTerminal API**, which provides a clean and stable way to get token and pool data. The original Selenium-based code has been moved to the `scraper/archive/selenium` directory for learning and comparison purposes.
+-   `api.py`: The main entry point for the application. It runs a **Flask web server** that serves the collected data and provides endpoints for interacting with the application. It also initializes and starts the automated scraping scheduler.
+-   `scheduler.py`: Contains the scheduling logic using `APScheduler`. It periodically runs the main scraping job defined in `main.py`.
+-   `main.py`: The "worker" script. It contains the core logic for a single scraping run. It fetches the list of pools from the database, calls the appropriate scraper for each, and stores the results.
+-   `database.py`: A centralized module for all **database interactions**. No other file writes SQL. This module handles getting a database connection, fetching pools to monitor, and storing price data.
+-   `config.py`: A simple configuration file that defines global constants like the database file path, preventing the use of "magic strings" in other files.
+-   `scraper/`: This directory contains all the individual scraper modules.
+    -   `__init__.py`: Implements the **Strategy Pattern** via the `SCRAPER_DISPATCHER` dictionary. This dictionary maps a `scraper_function` name (from the database) to the actual Python scraper function to be executed.
+    -   `geckoterminal_api.py`, `hyperliquid_native.py`, etc.: Individual modules, each responsible for scraping a specific type of source.
+-   `seed_pools.py`: A utility script to populate the database with an initial list of pools to monitor.
 
 ## Features
 
-- **Modular Scraper Design:** The main scraping logic is built around a reusable function that can query any pool on GeckoTerminal, making it easy to add new pools.
-- **Persistent Storage:** Scraped data is saved to a local SQLite database, including a timestamp, the DEX name, and the price.
-- **Data API:** A simple Flask API is included to serve all collected data in a clean JSON format.
-- **Reliable API Integration:** Uses the `requests` library to fetch data directly from the GeckoTerminal API.
-
-## Project Structure
-
--   `main.py`: The main entry point for running a one-time scraping job of all configured DEXs.
--   `api.py`: A Flask web server that provides a `/data` endpoint to view the contents of the database.
--   `database_setup.py`: A one-time script to create and initialize the SQLite database.
--   `scraper/`: This directory contains the individual scraper modules.
-    -   `__init__.py`: Makes the directory a Python package and exports the scraper functions.
-    -   `coingecko_api.py`: Contains the modular function for scraping GeckoTerminal pools.
-    -   `archive/`: Contains archived code from previous project versions (e.g., the old Selenium scrapers).
--   `requirements.txt`: A list of all required Python packages for the project.
--   `.gitignore`: Specifies files and directories to be ignored by Git (e.g., the database, virtual environment).
+-   **Modular Scraper Dispatcher:** Easily add new scrapers without changing the core loop. Just add a new function and register it in the `SCRAPER_DISPATCHER`.
+-   **Centralized Database Logic:** All SQL and database connections are handled in one place (`database.py`).
+-   **Automated & Manual Scraping:** A built-in scheduler (`APScheduler`) runs scraping jobs automatically, but you can also trigger a run manually.
+-   **Dynamic Pool Management:** Add new pools to be scraped via a simple API endpoint, without touching the code.
+-   **Data API:** A Flask API to serve all collected data and manage the scraper.
 
 ## Local Setup Guide
-
-Follow these steps to set up and run the project on a local machine (tested on WSL Ubuntu).
 
 ### Prerequisites
 
 -   Python 3.8+
 -   `pip` (Python package installer)
--   `git`
 
 ### Installation Steps
 
 1.  **Clone the Repository:**
-    Open your terminal and clone the project from GitHub.
     ```bash
     git clone https://github.com/TanYuanXiangElroy/Crypto_HYPE_scraper.git
     cd Crypto_HYPE_scraper
     ```
 
-2.  **Create a Virtual Environment:**
-    It's a best practice to isolate project dependencies.
+2.  **Create and Activate a Virtual Environment:**
     ```bash
-    # Create the virtual environment folder named 'venv'
     python3 -m venv venv
-    # Activate the environment
     source venv/bin/activate
     ```
-    *(Your terminal prompt should now be prefixed with `(venv)`)*
 
 3.  **Install Dependencies:**
-    Now, install all the packages from this file:
     ```bash
     pip install -r requirements.txt
     ```
 
-4.  **Initialize the Database:**
-    Run the setup script once to create the `prices.db` file and the necessary table.
+4.  **Seed the Database with Initial Pools:**
+    The database file (`prices.db`) will be created automatically. Run the seed script to populate it with the initial list of pools to monitor.
     ```bash
-    python database_setup.py
+    python seed_pools.py
     ```
+    You can inspect or modify `seed_pools.py` to change which pools are monitored by default.
 
-### Usage
+## Usage
 
-You can now run the scraper and the API.
+The primary way to run the application is by starting the API server, which includes the automated scheduler.
 
-1.  **Run the Scraper Manually:**
-    To execute a single run of all scrapers, which will collect the latest prices and save them to the database:
+1.  **Run the API Server & Scheduler:**
+    ```bash
+    python api.py
+    ```
+    The server will start on `http://127.0.0.1:5000`, and the scheduler will automatically begin running the scraping job every minute. The logs for the API and scheduler are saved to `api_server.log`.
+
+2.  **Run a Scraper Job Manually (Optional):**
+    If you want to perform a single, one-off scraping run without starting the server, you can run `main.py` directly. The output is logged to `cron.log`.
     ```bash
     python main.py
     ```
 
-2.  **Run the API Server:**
-    To view the data you have collected, start the Flask API server.
-    ```bash
-    python api.py
-    ```
-    The server will start on `http://127.0.0.1:5000`. You can now access the data:
-    -   **In a browser:** Navigate to `http://localhost:5000/data`
-    -   **In a new terminal:** Use `curl http://127.0.0.1:5000/data`
+3.  **View the Data:**
+    -   **Terminal Dashboard:** Run `python dashboard.py` (requires the API server to be running).
+    -   **Web Dashboard:** The React frontend is in the `scraper_front_end` directory. See its README for instructions.
+    -   **Directly via API:** Use a browser or `curl` to access the API endpoints.
 
-3.  **Run the Terminal Dashboard:**
-    This project includes a terminal-based dashboard that provides a live-updating view of the latest prices from the database.
+## API Endpoints
 
-    **Prerequisite:** Ensure the API Server is running in a separate terminal.
-
-    To start the dashboard, run:
-    ```bash
-    python dashboard.py
-    ```
-    Your terminal will clear and display a table of the most recent data, which automatically refreshes every 15 seconds.
-
-## How to Add a New Pool to Scrape
-
-This project is designed to be easily extensible. Follow these steps to add a new DEX pool to the scraping list.
-
-1.  **Find the Pool Information:**
-    -   Go to [GeckoTerminal](https://geckoterminal.com).
-    -   Find the token and network you are interested in.
-    -   You will need two pieces of information: the **network ID** (e.g., `hyperevm`) and the **pool address**.
-
-2.  **Add to the List in `main.py`:**
-    -   Open the `main.py` file.
-    -   Locate the `pools_to_scrape` list.
-    -   Add a new dictionary to the list with the information you found:
-        ```python
-        pools_to_scrape = [
-            # ... existing pools
-            {
-                "dex_name": "NameOfYourDEX", 
-                "network": "network_id_here", 
-                "pool_address": "pool_address_here"
-            }
-        ]
+-   `GET /`: Welcome message.
+-   `GET /data`: Fetches all stored price data.
+    -   Query Params: `limit` (int), `dex_name` (str).
+    -   Example: `http://localhost:5000/data?limit=10&dex_name=hyperliquid_native`
+-   `GET /latest_data`: Fetches the single most recent price data entry.
+-   `POST /run_scraper`: Manually triggers a new scraping job.
+-   `POST /add_scrap_pool`: Adds a new pool to the monitoring database.
+    -   **Method:** `POST`
+    -   **Body:** Raw JSON payload.
+    -   **Success:** `201 Created`
+    -   **Error:** `400 Bad Request`, `409 Conflict` (if pool exists).
+    -   **Example Payload:**
+        ```json
+        {
+            "dex_name": "Thruster",
+            "scraper_function": "geckoterminal",
+            "network": "blast_mainnet",
+            "pool_address": "0x1265b4354a35159a6866b8e2B491c9534f595a85",
+            "target_token_address": "0x4300000000000000000000000000000000000004"
+        }
         ```
 
-That's it! The main loop will automatically pick up the new entry and start scraping it.
+## How to Extend the Scraper
 
-## Automation with Cron (Linux/WSL)  Cron is an alternative or backup, but api.py handles it by default.
+### Adding a New Pool to Scrape
 
-To run the scraper automatically at a regular interval, you can set up a cron job. The following steps will configure the scraper to run every 5 minutes and save its output to a log file for easy debugging.
+To add a new pool, you don't need to edit any code. Simply send a `POST` request to the `/add_scrap_pool` endpoint with the correct JSON payload (see above). The application will perform a "dry run" to validate the pool before adding it to the database.
 
-### Steps to Set Up the Cron Job
+### Adding a New Scraper Function
 
-1.  **Open the Crontab Editor:**
-    Open your terminal and type the following command to edit the cron configuration file for your user.
-    ```bash
-    crontab -e
+If you need to scrape from a new source (e.g., a new DEX with a unique API), follow these two steps:
+
+1.  **Create the Scraper Module:**
+    -   Create a new `.py` file inside the `scraper/` directory (e.g., `mynewdex_api.py`).
+    -   In this file, create a function named `scrape` that accepts `network`, `pool_address`, and `target_token_address` as arguments.
+    -   This function should contain the logic to fetch and process the data, returning a dictionary with the price information or `None` if it fails.
+
+2.  **Register the Scraper in the Dispatcher:**
+    -   Open `scraper/__init__.py`.
+    -   Import your new `scrape` function.
+    -   Add a new entry to the `SCRAPER_DISPATCHER` dictionary. The key is the string you will use in the database (e.g., `'mynewdex'`), and the value is the function object you just imported.
+
+    ```python
+    # scraper/__init__.py
+
+    # ... other imports
+    from .mynewdex_api import scrape as scrape_mynewdex
+
+    SCRAPER_DISPATCHER = {
+        'geckoterminal': scrape_gecko_terminal_pool,
+        'hyperliquid_native': scrape_hyperliquid_native,
+        'mynewdex': scrape_mynewdex, # Add your new scraper here
+    }
     ```
-    *(If it's your first time, you may be asked to choose a text editor. Select `nano` if you are unsure, as it is the easiest to use.)*
-
-2.  **Add the Job Definition:**
-    Go to the bottom of the file and add the following line.
-
-    **Important:** You must replace `/path/to/your/project` with the **absolute path** to your project directory. You can find this path by navigating to your project folder in the terminal and running the `pwd` command.
-
-    ```crontab
-    # Run the HYPE price scraper every 5 minutes and log output
-    */5 * * * * /path/to/your/project/venv/bin/python /path/to/your/project/main.py >> /path/to/your/project/cron.log 2>&1
-    ```
-
-    **Example:** If your project is located at `/home/USERNAME/Crypto_HYPE_scraper`, the line would be:
-    ```crontab
-    */5 * * * * /home/USERNAME/Crypto_HYPE_scraper/venv/bin/python /home/USERNAME/Crypto_HYPE_scraper/main.py >> /home/USERNAME/Crypto_HYPE_scraper/cron.log 2>&1
-    ```
-
-3.  **Save and Exit:**
-    -   If using `nano`, press `Ctrl+X`, then `Y`, and finally `Enter` to save the file.
-    -   You should see a confirmation message like `crontab: installing new crontab`.
-
-### Understanding the Cron Job Command
-
-Each part of the command has a specific purpose:
-
--   `*/5 * * * *`: **The Schedule.** This is the "cron expression" that means "run at every 5th minute of every hour, of every day."
--   `/path/to/your/project/venv/bin/python`: **The Python Interpreter.** This is the absolute path to the Python executable *inside your virtual environment*. This is crucial to ensure the script runs with all the correct installed packages.
--   `/path/to/your/project/main.py`: **The Script to Run.** This is the absolute path to your main scraper script.
--   `>> /path/to/your/project/cron.log`: **Redirecting Output.** The `>>` operator appends any printed output from your script to a file named `cron.log`. This allows you to see what the scraper is doing.
--   `2>&1`: **Redirecting Errors.** This is a standard shell command that means "redirect the standard error stream (`2`) to the same place as the standard output stream (`1`)". In short, it ensures that both normal output and any error messages are saved to your `cron.log` file, making debugging much easier.
-
-### Managing the Cron Job
-
--   **To view your active cron jobs:**
-    ```bash
-    crontab -l
-    ```
--   **To remove all of your cron jobs:**
-    ```bash
-    crontab -r
-    ```
--   **To monitor the scraper's output in real-time:**
-    ```bash
-    tail -f /path/to/your/project/cron.log
-    ```
-
-## Dashboards & Architecture
-
-This project offers two ways to visualize the scraped data, both of which connect to the same backend API.
-
-### 1. Terminal Dashboard
-
-A lightweight, terminal-based dashboard powered by the `rich` library. It provides a live, auto-refreshing table of the latest price data.
-
--   **How to Run:** `python dashboard.py`
--   **Requires:** The API server (`api.py`) must be running.
-
-### 2. Web Dashboard (React Frontend)
-
-A more feature-rich, web-based dashboard built with React. This provides a user-friendly interface to view and interact with the data.
-
--   **Location:** The code for this frontend is in the separate `scraper_front_end` directory.
--   **Requires:** The API server (`api.py`) must be running.
--   See the README in the `scraper_front_end` directory for full setup and run instructions.
-
-### System Architecture
-
-Here is how the different parts of the project fit together:
-
-```
-+-----------------+      (runs every 5 mins)
-|   Cron Job      +--------------------------+
-|  (main.py)      |                          |
-+-------+---------+                          v
-        |                               +------------+
-        | (Writes data)                 | Database   |
-        |                               | (prices.db)|
-        +-----------------------------> +------+-----+
-                                               ^
-                                               | (Reads data)
-                                               |
-+-----------------+      (runs continuously) +-+--------+
-|   API Server    +--------------------------+          |
-|    (api.py)     |                                     |
-+-------+---------+                                     |
-        ^                                               ^
-        | (Makes HTTP request to /data)                 | (Makes HTTP request to /data)
-        |                                               |
-+-------+------------------+      +---------------------+------------------+
-|  Terminal Dashboard      |      |  Web Dashboard (React)                 |
-|    (dashboard.py)        |      |  (in scraper_front_end/ folder)        |
-+--------------------------+      +----------------------------------------+
-```
+Once registered, you can add pools that use `"scraper_function": "mynewdex"` via the API.
