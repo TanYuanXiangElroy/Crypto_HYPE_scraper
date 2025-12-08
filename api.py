@@ -6,7 +6,7 @@ from scheduler import start_scheduler
 
 import config
 from scraper import SCRAPER_DISPATCHER
-from main import main as run_scraper_job
+from jobs import run_scraper_job
 from flask_cors import CORS
 from database import get_latest_data_database, get_all_data_of_DEX, is_pool_monitored, add_pool
 
