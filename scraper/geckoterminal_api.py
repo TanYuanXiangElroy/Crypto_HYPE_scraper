@@ -1,6 +1,7 @@
 # scrapers/coingecko_api.py
 
 import requests
+import config
 
 def scrape_gecko_terminal_pool(network: str, pool_address: str, target_token_address: str):
     """
@@ -18,7 +19,7 @@ def scrape_gecko_terminal_pool(network: str, pool_address: str, target_token_add
     """
     print(f"-> Starting API scrape for GeckoTerminal (Network: {network}, Pool: {pool_address}, Target: {target_token_address})...")
 
-    url = f"https://api.geckoterminal.com/api/v2/networks/{network}/pools/{pool_address}"
+    url = f"{config.GECKO_TERMINAL_API_BASE_URL}/networks/{network}/pools/{pool_address}"
     headers = {"accept": "application/json"}
 
     try:

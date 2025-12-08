@@ -1,23 +1,24 @@
 # scrapers/upheaval_v3_rpc.py
 
 from web3 import Web3
+import config
 
 def scrape():
     """Scrapes the HYPE/USDC price from a Uniswap V3-style pool on Hyperliquid."""
     print("-> Starting RPC scrape for Upheaval (V3-style) HYPE/USDC...")
 
     # --- Configuration ---
-    rpc_url = "https://api.hyperliquid.xyz/evm"
+    rpc_url = config.HYPERLIQUID_RPC_URL
     # The V3 pool address you found on GeckoTerminal
-    pool_address = "0x2621bdceb7584241dd8ed3d7ee46938b34060e77"
+    pool_address = config.UPHEAVAL_V3_POOL_ADDRESS
     
     # We use a standard, minimal V3 ABI since the contract is not verified
     pool_abi = """
     [{"inputs":[],"name":"slot0","outputs":[{"internalType":"uint160","name":"sqrtPriceX96","type":"uint160"},{"internalType":"int24","name":"tick","type":"int24"},{"internalType":"uint16","name":"observationIndex","type":"uint16"},{"internalType":"uint16","name":"observationCardinality","type":"uint16"},{"internalType":"uint16","name":"observationCardinalityNext","type":"uint16"},{"internalType":"uint8","name":"feeProtocol","type":"uint8"},{"internalType":"bool","name":"unlocked","type":"bool"}],"stateMutability":"view","type":"function"}]
     """
     # You MUST verify the decimals for WHYPE and USDC on the Hyperliquid chain
-    hype_decimals = 18
-    usdc_decimals = 6
+    hype_decimals = config.HYPE_DECIMALS
+    usdc_decimals = config.USDC_DECIMALS
 
     try:
         # --- Connect and Set Up ---

@@ -2,7 +2,7 @@
 # scheduler.py
 from apscheduler.schedulers.background import BackgroundScheduler
 import logging
-from main import main as run_scraper_job
+from jobs import run_scraper_job
 import atexit
 
 

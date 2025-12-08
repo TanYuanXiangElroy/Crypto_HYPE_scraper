@@ -1,6 +1,7 @@
 # scrapers/hyperliquid_native.py
 
 import requests
+import config
 
 def scrape(target_token_symbol="HYPE"):
     """
@@ -8,12 +9,11 @@ def scrape(target_token_symbol="HYPE"):
     """
     print(f"-> Starting Native API scrape for Hyperliquid ({target_token_symbol})...")
 
-    url = "https://api.hyperliquid.xyz/info"
     headers = {"Content-Type": "application/json"}
     
     # The HYPE Token Contract Address on HyperEVM
     # Found via Explorer/Docs
-    hype_token_id = "0x0d01dc56dcaaca66ad901c959b4011ec"
+    hype_token_id = config.HYPE_TOKEN_ID
 
     payload = {
         "type": "tokenDetails",
@@ -21,7 +21,7 @@ def scrape(target_token_symbol="HYPE"):
     }
 
     try:
-        response = requests.post(url, json=payload, headers=headers)
+        response = requests.post(config.HYPERLIQUID_API_URL, json=payload, headers=headers)
         response.raise_for_status()
         data = response.json()
         
