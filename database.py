@@ -2,13 +2,25 @@ import sqlite3
 import config
 import logging
 from datetime import datetime
+import contextlib
 
+@contextlib.contextmanager
 def get_db_connection():
-    """Creates a connection to the SQLite database."""
-    # Use the absolute path from the config file for robustness
-    conn = sqlite3.connect(config.DB_PATH)
-    conn.row_factory = sqlite3.Row  # This lets us access columns by name
-    return conn
+    """
+    Provides a connection to the SQLite database using a context manager.
+    Ensures the connection is properly closed after use.
+    """
+    conn = None
+    try:
+        conn = sqlite3.connect(config.DB_PATH)
+        conn.row_factory = sqlite3.Row  # This lets us access columns by name
+        yield conn
+    except sqlite3.Error as e:
+        logging.error(f"Database connection error: {e}")
+        raise # Re-raise the exception after logging
+    finally:
+        if conn:
+            conn.close()
 
 def store_price_data(dex_name, token_pair, data):
     """Inserts a new price record into the SQLite database."""
@@ -129,4 +141,3 @@ def delete_all_pool():
         logging.info("-> Successfully deleted all pools from monitored_pools.")
     except sqlite3.Error as e:
         logging.error(f"-> Error deleting pools: {e}")
-    

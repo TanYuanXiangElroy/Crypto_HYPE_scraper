@@ -1,23 +1,24 @@
 # scrapers/hyperliquid_native.py
 
 import requests
+import logging
 import config
+from .exceptions import ScrapingError
 
-def scrape(target_token_symbol="HYPE"):
+def scrape(target_token_symbol="HYPE", **kwargs):
     """
     Scrapes the official Hyperliquid Spot Price using the 'tokenDetails' endpoint.
+    
+    Raises:
+        ScrapingError: For any issues during the scraping process.
     """
-    print(f"-> Starting Native API scrape for Hyperliquid ({target_token_symbol})...")
+    logging.info(f"Starting Native API scrape for Hyperliquid ({target_token_symbol})")
 
     headers = {"Content-Type": "application/json"}
     
-    # The HYPE Token Contract Address on HyperEVM
-    # Found via Explorer/Docs
-    hype_token_id = config.HYPE_TOKEN_ID
-
     payload = {
         "type": "tokenDetails",
-        "tokenId": hype_token_id
+        "tokenId": config.HYPE_TOKEN_ID
     }
 
     try:
@@ -28,15 +29,14 @@ def scrape(target_token_symbol="HYPE"):
         # The API returns 'midPx' (Mid Price) and 'markPx' (Mark Price)
         # We'll use midPx as it usually represents the current spot price best
         if 'midPx' not in data:
-            print(f"   Error: Price data (midPx) not found in response for {target_token_symbol}")
-            return None
+            raise ScrapingError(f"Price data ('midPx') not found in Hyperliquid response for {target_token_symbol}")
 
         spot_price = float(data['midPx'])
         
         # Hyperliquid Spot fees are generally 0 for this type of data check
         fee_percentage = 0.0
 
-        print(f"   Successfully scraped Hyperliquid Native Price: ${spot_price:.4f}")
+        logging.info(f"Successfully scraped Hyperliquid Native Price: ${spot_price:.4f}")
         
         return {
             'spot_price': spot_price,
@@ -46,6 +46,10 @@ def scrape(target_token_symbol="HYPE"):
             'sell_price': spot_price
         }
 
+    except requests.exceptions.HTTPError as http_err:
+        response_text = http_err.response.text if http_err.response is not None else "No response body available."
+        raise ScrapingError(f"Hyperliquid API request failed: {http_err}. Response: {response_text}") from http_err
+    except (KeyError, ValueError) as e:
+        raise ScrapingError(f"Failed to parse Hyperliquid API response: {e}") from e
     except Exception as e:
-        print(f"   An unexpected error occurred in Hyperliquid Native scraper: {e}")
-        return None
+        raise ScrapingError(f"An unexpected error occurred in Hyperliquid Native scraper: {e}") from e

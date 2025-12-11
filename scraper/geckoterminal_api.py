@@ -1,7 +1,9 @@
-# scrapers/coingecko_api.py
+# scrapers/geckoterminal_api.py
 
 import requests
+import logging
 import config
+from .exceptions import ScrapingError
 
 def scrape_gecko_terminal_pool(network: str, pool_address: str, target_token_address: str):
     """
@@ -11,13 +13,16 @@ def scrape_gecko_terminal_pool(network: str, pool_address: str, target_token_add
     Args:
         network (str): The blockchain network ID (e.g., 'eth', 'hyperevm').
         pool_address (str): The address of the liquidity pool.
-        target_token_address (str): The symbol of the token whose price is desired compared to the other (e.g., 'WHYPE', 'USDC').
+        target_token_address (str): The address of the token whose price is desired.
 
     Returns:
-        dict: A dictionary containing the scraped price, or None if scraping fails.
-              Example: {'main_price': 123.45}
+        dict: A dictionary containing the scraped price data.
+    
+    Raises:
+        ScrapingError: If there is a network issue, a problem with the API response,
+                       or if the target token is not found in the pool.
     """
-    print(f"-> Starting API scrape for GeckoTerminal (Network: {network}, Pool: {pool_address}, Target: {target_token_address})...")
+    logging.info(f"Starting API scrape for GeckoTerminal (Network: {network}, Pool: {pool_address})")
 
     url = f"{config.GECKO_TERMINAL_API_BASE_URL}/networks/{network}/pools/{pool_address}"
     headers = {"accept": "application/json"}
@@ -35,7 +40,6 @@ def scrape_gecko_terminal_pool(network: str, pool_address: str, target_token_add
         base_token_id = relationships['base_token']['data']['id']
         quote_token_id = relationships['quote_token']['data']['id']
         
-        # The address is the part of the ID after the underscore
         base_token_address = base_token_id.split('_')[-1]
         quote_token_address = quote_token_id.split('_')[-1]
 
@@ -43,7 +47,7 @@ def scrape_gecko_terminal_pool(network: str, pool_address: str, target_token_add
         base_token_price_usd = attributes.get('base_token_price_usd')
         quote_token_price_usd = attributes.get('quote_token_price_usd')
         
-        # 4. Determine which price to return by comparing addresses (case-insensitive)
+        # 4. Determine which price to return
         spot_price = None
         
         if target_token_address.lower() == base_token_address.lower():
@@ -51,29 +55,25 @@ def scrape_gecko_terminal_pool(network: str, pool_address: str, target_token_add
         elif target_token_address.lower() == quote_token_address.lower():
             spot_price = float(quote_token_price_usd)
         else:
-            print(f"   Error: Target token address '{target_token_address}' not found in pool.")
-            return None
+            raise ScrapingError(f"Target token '{target_token_address}' not found in pool '{pool_address}'.")
 
         pool_name = attributes.get('name', 'Unknown Pair')
 
         fee_percentage_str = attributes.get('pool_fee_percentage')
         fee_percentage = 0.0
         
-        # Safely convert fee to a float, defaulting to 0 if it's missing or invalid
         if fee_percentage_str:
             try:
                 fee_percentage = float(fee_percentage_str)
             except (ValueError, TypeError):
-                print(f"   Warning: Could not parse fee_percentage: '{fee_percentage_str}'")
+                logging.warning(f"Could not parse fee_percentage: '{fee_percentage_str}' for pool {pool_address}")
         
         fee_multiplier = fee_percentage / 100
         
-        # Calculate effective prices
-        # For a buyer, the effective price is higher. For a seller, it's lower.
         effective_buy_price = spot_price / (1 - fee_multiplier) if fee_multiplier < 1 else spot_price
         effective_sell_price = spot_price * (1 - fee_multiplier)
 
-        print(f"   Successfully scraped Price for {pool_name}: Spot=${spot_price:.6f}, Fee={fee_percentage}%")
+        logging.info(f"Successfully scraped Price for {pool_name}: Spot=${spot_price:.6f}")
 
         return {
             'spot_price': spot_price,
@@ -84,9 +84,8 @@ def scrape_gecko_terminal_pool(network: str, pool_address: str, target_token_add
         }
 
     except requests.exceptions.HTTPError as http_err:
-        print(f"   HTTP error occurred: {http_err} - Check the network ID or Pool Address.")
-        print(f"   Response Body: {response.text}")
-        return None
+        raise ScrapingError(f"GeckoTerminal API request failed: {http_err}. Response: {http_err.response.text}") from http_err
+    except (KeyError, IndexError, TypeError) as e:
+        raise ScrapingError(f"Failed to parse GeckoTerminal API response for pool {pool_address}: {e}") from e
     except Exception as e:
-        print(f"   An unexpected error occurred in GeckoTerminal API scraper: {e}")
-        return None
+        raise ScrapingError(f"An unexpected error occurred in GeckoTerminal scraper for pool {pool_address}: {e}") from e
