@@ -4,3 +4,5 @@ Flask-Cors
 requests
 rich
 web3
+pytest
+pytest-mock
