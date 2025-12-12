@@ -1,8 +1,8 @@
 import pytest
 import requests
-# The imports now include the top-level package name
-from Crypto_HYPE_scraper.scraper import hyperliquid_native
-from Crypto_HYPE_scraper.scraper.exceptions import ScrapingError
+# FIXED: Removed 'Crypto_HYPE_scraper.' prefix
+from scraper import hyperliquid_native
+from scraper.exceptions import ScrapingError
 
 # Mark all tests in this file as belonging to the "scrapers" group
 pytestmark = pytest.mark.scrapers
@@ -16,8 +16,8 @@ def test_scrape_hyperliquid_native_success(mocker):
     # 1. Arrange
     fake_api_response = {"midPx": "123.45"}
     
-    # We also update the path to patch for the mock
-    mock_post = mocker.patch('Crypto_HYPE_scraper.scraper.hyperliquid_native.requests.post')
+    # FIXED: Updated patch path to match the new import
+    mock_post = mocker.patch('scraper.hyperliquid_native.requests.post')
     
     mock_post.return_value.json.return_value = fake_api_response
     mock_post.return_value.raise_for_status.return_value = None
@@ -39,7 +39,8 @@ def test_scrape_hyperliquid_native_api_error(mocker):
     """
     # 1. Arrange
     # Configure the mock to raise an HTTPError when requests.post is called
-    mock_post = mocker.patch('Crypto_HYPE_scraper.scraper.hyperliquid_native.requests.post')
+    # FIXED: Updated patch path
+    mock_post = mocker.patch('scraper.hyperliquid_native.requests.post')
     mock_post.side_effect = requests.exceptions.HTTPError("404 Client Error: Not Found for url: http://example.com")
 
     # 2. Act & Assert
