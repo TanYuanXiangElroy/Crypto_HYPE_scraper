@@ -36,6 +36,9 @@ def scrape(target_token_symbol="HYPE", **kwargs):
         # Hyperliquid Spot fees are generally 0 for this type of data check
         fee_percentage = 0.0
 
+        # Hyperliquid withdrawals/transfers usually have a small fixed fee, e.g. ~$0.15 USDC
+        transfer_fee = 0.15
+
         logging.info(f"Successfully scraped Hyperliquid Native Price: ${spot_price:.4f}")
         
         return {
@@ -43,7 +46,8 @@ def scrape(target_token_symbol="HYPE", **kwargs):
             'pool_name': f"{target_token_symbol} / USDC (Native)",
             'fee_percentage': fee_percentage,
             'buy_price': spot_price, 
-            'sell_price': spot_price
+            'sell_price': spot_price,
+            'transfer_fee': transfer_fee
         }
 
     except requests.exceptions.HTTPError as http_err:

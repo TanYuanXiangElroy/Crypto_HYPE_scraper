@@ -19,10 +19,14 @@ from .hyperliquid_native import scrape as scrape_hyperliquid_native
 
 # Import the geckoterminal_api scraper
 from .geckoterminal_api import scrape_gecko_terminal_pool
+from .binance_api import scrape_binance
+from .coinbase_api import scrape_coinbase
 
 # --- Scraper Dispatcher ---
 # This dictionary maps the scraper name from the DB to the actual function to call.
 SCRAPER_DISPATCHER = {
     'geckoterminal': scrape_gecko_terminal_pool,
     'hyperliquid_native': scrape_hyperliquid_native,
+    'binance': scrape_binance,
+    'coinbase': scrape_coinbase,
 }

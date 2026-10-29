@@ -29,8 +29,8 @@ def store_price_data(dex_name, token_pair, data):
             cursor = conn.cursor()
             timestamp = datetime.now()
             cursor.execute('''
-                INSERT INTO hype_prices (timestamp, dex_name, token_pair, spot_price, fee_percentage, buy_price, sell_price)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO hype_prices (timestamp, dex_name, token_pair, spot_price, fee_percentage, buy_price, sell_price, transfer_fee)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             ''', (
                 timestamp,
                 dex_name,
@@ -38,7 +38,8 @@ def store_price_data(dex_name, token_pair, data):
                 data.get('spot_price'),
                 data.get('fee_percentage'),
                 data.get('buy_price'),
-                data.get('sell_price')
+                data.get('sell_price'),
+                data.get('transfer_fee')
             ))
             conn.commit()
             logging.info(f"-> Successfully stored: {dex_name} | {token_pair} | Spot Price=${data.get('spot_price'):.4f}")
@@ -64,7 +65,7 @@ def get_latest_data_database():
         with get_db_connection() as conn:
             cursor = conn.cursor()
             cursor.execute('''
-                SELECT timestamp, dex_name, token_pair, buy_price, sell_price
+                SELECT timestamp, dex_name, token_pair, buy_price, sell_price, transfer_fee
                 FROM hype_prices
                 ORDER BY timestamp DESC
                 LIMIT 1
@@ -79,7 +80,7 @@ def get_latest_data_database():
 
 def get_all_data_of_DEX(limit=None, dex_name=None):
     """Fetches all stored price data, with optional filtering by DEX name and limit."""
-    query = 'SELECT timestamp, dex_name, token_pair, spot_price,fee_percentage,buy_price,sell_price FROM hype_prices'
+    query = 'SELECT timestamp, dex_name, token_pair, spot_price,fee_percentage,buy_price,sell_price,transfer_fee FROM hype_prices'
     params = []
     if dex_name:
         query += ' WHERE dex_name = ?'
