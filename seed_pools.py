@@ -49,7 +49,20 @@ pools_to_scrape = [
         "pool_address": "0x3e69297ae794011970256623b4ab68324983b9ed",
         "target_token_address": "0x5555555555555555555555555555555555555555", # WHYPE
     },
-
+    {
+        "dex_name": "Binance",
+        "scraper_function": "binance",
+        "network": "CEX",
+        "pool_address": "N/A",
+        "target_token_address": "BTC",
+    },
+    {
+        "dex_name": "Coinbase",
+        "scraper_function": "coinbase",
+        "network": "CEX",
+        "pool_address": "N/A",
+        "target_token_address": "BTC",
+    }
 ]
 
 def seed_pools():

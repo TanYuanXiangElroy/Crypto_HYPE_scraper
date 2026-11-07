@@ -73,6 +73,9 @@ def scrape_gecko_terminal_pool(network: str, pool_address: str, target_token_add
         effective_buy_price = spot_price / (1 - fee_multiplier) if fee_multiplier < 1 else spot_price
         effective_sell_price = spot_price * (1 - fee_multiplier)
 
+        # For DEXes on hyperEVM (like upheaval, project x, kittenswap, ultrasolid), gas fees are roughly ~$0.01
+        transfer_fee = 0.01
+
         logging.info(f"Successfully scraped Price for {pool_name}: Spot=${spot_price:.6f}")
 
         return {
@@ -80,7 +83,8 @@ def scrape_gecko_terminal_pool(network: str, pool_address: str, target_token_add
             'pool_name': pool_name,
             'fee_percentage': fee_percentage,
             'buy_price': effective_buy_price,
-            'sell_price': effective_sell_price
+            'sell_price': effective_sell_price,
+            'transfer_fee': transfer_fee
         }
 
     except requests.exceptions.HTTPError as http_err:

@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HYPE Arbitrage Tracker</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f4f9; color: #333; }
+        h1, h2 { color: #2c3e50; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; background-color: #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
+        th { background-color: #34495e; color: #fff; }
+        tr:hover { background-color: #f1f1f1; }
+        .profit { color: green; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <h1>HYPE Arbitrage Tracker</h1>
+    <p>Data is updated periodically via GitHub Actions.</p>
+
+    <h2>Latest Prices</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Exchange</th>
+                <th>Pair</th>
+                <th>Spot Price</th>
+                <th>Fee %</th>
+                <th>Transfer Fee</th>
+                <th>Effective Buy Price</th>
+                <th>Effective Sell Price</th>
+            </tr>
+        </thead>
+        <tbody id="prices-table-body">
+            <!-- Data will be injected here -->
+        </tbody>
+    </table>
+
+    <h2>Arbitrage Opportunities</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Buy Exchange</th>
+                <th>Sell Exchange</th>
+                <th>Pair</th>
+                <th>Total Buy Cost</th>
+                <th>Total Sell Revenue</th>
+                <th>Estimated Profit (per token)</th>
+            </tr>
+        </thead>
+        <tbody id="arbitrage-table-body">
+            <!-- Data will be injected here -->
+        </tbody>
+    </table>
+
+    <script>
+        fetch('data.json')
+            .then(response => response.json())
+            .then(data => {
+                const pricesBody = document.getElementById('prices-table-body');
+                data.latest_prices.forEach(price => {
+                    pricesBody.innerHTML += `
+                        <tr>
+                            <td>${price.dex_name}</td>
+                            <td>${price.token_pair}</td>
+                            <td>$${price.spot_price.toFixed(4)}</td>
+                            <td>${(price.fee_percentage).toFixed(2)}%</td>
+                            <td>$${price.transfer_fee || 0}</td>
+                            <td>$${price.buy_price.toFixed(4)}</td>
+                            <td>$${price.sell_price.toFixed(4)}</td>
+                        </tr>
+                    `;
+                });
+
+                const arbitrageBody = document.getElementById('arbitrage-table-body');
+                if (data.arbitrage_opportunities.length === 0) {
+                    arbitrageBody.innerHTML = '<tr><td colspan="6">No profitable arbitrage opportunities found.</td></tr>';
+                } else {
+                    data.arbitrage_opportunities.sort((a, b) => b.profit - a.profit).forEach(opp => {
+                        const totalBuy = opp.buy_price + (opp.transfer_fee || 0);
+                        arbitrageBody.innerHTML += `
+                            <tr>
+                                <td>${opp.buy_exchange}</td>
+                                <td>${opp.sell_exchange}</td>
+                                <td>${opp.token_pair}</td>
+                                <td>$${totalBuy.toFixed(4)}</td>
+                                <td>$${opp.sell_price.toFixed(4)}</td>
+                                <td class="profit">$${opp.profit.toFixed(4)}</td>
+                            </tr>
+                        `;
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching data:', error);
+                document.getElementById('prices-table-body').innerHTML = '<tr><td colspan="7">Error loading data.</td></tr>';
+            });
+    </script>
+</body>
+</html>

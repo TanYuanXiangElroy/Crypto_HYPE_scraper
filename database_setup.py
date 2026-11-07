@@ -14,7 +14,8 @@ CREATE TABLE IF NOT EXISTS hype_prices (
     spot_price REAL NOT NULL,
     fee_percentage REAL,
     buy_price REAL,
-    sell_price REAL
+    sell_price REAL,
+    transfer_fee REAL
 )
 
 ''')
